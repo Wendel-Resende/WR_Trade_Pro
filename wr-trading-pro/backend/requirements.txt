@@ -1,0 +1,10 @@
+MetaTrader5==5.0.45
+python-socketio==5.11.0
+aiohttp==3.9.1
+python-dotenv==1.0.0
+pandas==2.1.4
+numpy==1.24.3
+websockets==12.0
+asyncio==3.4.3
+python-dateutil==2.8.2
+pytz==2023.3

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Conexão MT5</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0A1628;
+            color: white;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #0F1B2E;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(0, 247, 255, 0.2);
+        }
+        h1 {
+            color: #00F5FF;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+        .connected { background: #10B981; }
+        .disconnected { background: #EF4444; }
+        .connecting { background: #FBBF24; }
+        .log {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-left: 3px solid #00F5FF;
+        }
+        .success { color: #10B981; }
+        .error { color: #EF4444; }
+        .info { color: #60A5FA; }
+        .warning { color: #FBBF24; }
+        button {
+            background: linear-gradient(90deg, #FF006E, #00F5FF);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: opacity 0.3s;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .symbols {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .symbol-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+        .symbol-name {
+            font-weight: bold;
+            color: #00F5FF;
+        }
+        .symbol-price {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        .positive { color: #10B981; }
+        .negative { color: #EF4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Teste de Conexão MT5 WebSocket</h1>
+        
+        <div class="status">
+            <div class="status-dot disconnected" id="statusDot"></div>
+            <div>
+                <div id="statusText">Desconectado</div>
+                <div id="statusDetails" style="font-size: 12px; color: #94A3B8;">Aguardando conexão...</div>
+            </div>
+        </div>
+
+        <div>
+            <button onclick="connect()" id="connectBtn">Conectar</button>
+            <button onclick="disconnect()" id="disconnectBtn" disabled>Desconectar</button>
+            <button onclick="subscribeAll()" id="subscribeBtn" disabled>Subscrever Símbolos</button>
+            <button onclick="clearLog()">Limpar Log</button>
+        </div>
+
+        <div class="symbols" id="symbolsContainer">
+            <!-- Símbolos serão adicionados aqui -->
+        </div>
+
+        <div class="log" id="logContainer">
+            <div class="log-entry info">Inicializando teste de conexão MT5...</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const WS_URL = 'ws://localhost:8765';
+        let socket = null;
+        const symbols = ['EURUSD', 'GBPUSD', 'USDJPY', 'BTCUSD', 'ETHUSD', 'AUDUSD'];
+        
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        function updateStatus(connected, details = '') {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const statusDetails = document.getElementById('statusDetails');
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            const subscribeBtn = document.getElementById('subscribeBtn');
+            
+            if (connected) {
+                statusDot.className = 'status-dot connected';
+                statusText.textContent = 'Conectado';
+                statusDetails.textContent = details || 'Conectado ao servidor MT5';
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+                subscribeBtn.disabled = false;
+                log('✅ Conectado ao servidor MT5 WebSocket', 'success');
+            } else {
+                statusDot.className = 'status-dot disconnected';
+                statusText.textContent = 'Desconectado';
+                statusDetails.textContent = details || 'Desconectado do servidor';
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+                subscribeBtn.disabled = true;
+                if (details) {
+                    log(`❌ ${details}`, 'error');
+                }
+            }
+        }
+        
+        function updateSymbol(symbol, data) {
+            let card = document.getElementById(`symbol-${symbol}`);
+            if (!card) {
+                card = document.createElement('div');
+                card.className = 'symbol-card';
+                card.id = `symbol-${symbol}`;
+                card.innerHTML = `
+                    <div class="symbol-name">${symbol}</div>
+                    <div class="symbol-price" id="price-${symbol}">--</div>
+                    <div id="change-${symbol}">--</div>
+                `;
+                document.getElementById('symbolsContainer').appendChild(card);
+            }
+            
+            if (data && data.tick) {
+                const tick = data.tick;
+                const price = tick.last || tick.bid || 0;
+                const change = tick.change || 0;
+                const changePercent = tick.changePercent || 0;
+                
+                document.getElementById(`price-${symbol}`).textContent = price.toFixed(4);
+                document.getElementById(`price-${symbol}`).className = `symbol-price ${change >= 0 ? 'positive' : 'negative'}`;
+                document.getElementById(`change-${symbol}`).innerHTML = `
+                    ${change >= 0 ? '↗' : '↘'} 
+                    ${change.toFixed(4)} 
+                    <span style="color: ${changePercent >= 0 ? '#10B981' : '#EF4444'}">
+                        (${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%)
+                    </span>
+                `;
+                
+                log(`📈 ${symbol}: ${price.toFixed(4)} (${change >= 0 ? '+' : ''}${change.toFixed(4)})`, 'info');
+            }
+        }
+        
+        function connect() {
+            log('🔄 Conectando ao servidor MT5...', 'warning');
+            updateStatus(false, 'Conectando...');
+            
+            socket = io(WS_URL, {
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+            });
+            
+            socket.on('connect', () => {
+                updateStatus(true, `Conectado - ID: ${socket.id}`);
+                log(`🔗 ID da sessão: ${socket.id}`, 'success');
+            });
+            
+            socket.on('disconnect', () => {
+                updateStatus(false, 'Desconectado do servidor');
+            });
+            
+            socket.on('error', (error) => {
+                log(`❌ Erro: ${error.message || JSON.stringify(error)}`, 'error');
+            });
+            
+            socket.on('tick', (data) => {
+                updateSymbol(data.symbol, data);
+            });
+            
+            socket.on('connected', (data) => {
+                log(`📡 ${data.message}`, 'success');
+            });
+            
+            socket.on('subscribed', (data) => {
+                log(`✅ ${data.message}`, 'success');
+            });
+            
+            socket.on('health', (data) => {
+                log(`❤️ Saúde: MT5 ${data.mt5_connected ? 'conectado' : 'desconectado'}, Clientes: ${data.clients_connected}`, 'info');
+            });
+        }
+        
+        function disconnect() {
+            if (socket) {
+                log('🔌 Desconectando...', 'warning');
+                socket.disconnect();
+                socket = null;
+                updateStatus(false, 'Desconectado manualmente');
+            }
+        }
+        
+        function subscribeAll() {
+            if (!socket || !socket.connected) {
+                log('⚠️ Não conectado ao servidor', 'error');
+                return;
+            }
+            
+            symbols.forEach(symbol => {
+                socket.emit('subscribe', { symbol, timeframe: 'M5' });
+                log(`📡 Subscrevendo ${symbol}...`, 'info');
+            });
+        }
+        
+        function clearLog() {
+            document.getElementById('logContainer').innerHTML = '<div class="log-entry info">Log limpo</div>';
+        }
+        
+        // Inicializar símbolos
+        symbols.forEach(symbol => {
+            updateSymbol(symbol, null);
+        });
+        
+        log('🟡 Pronto para testar conexão MT5. Clique em "Conectar" para iniciar.', 'info');
+    </script>
+</body>
+</html>

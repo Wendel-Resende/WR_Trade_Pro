@@ -1,0 +1,253 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #0A1628;
+    --foreground: #FFFFFF;
+    --surface: #0F1B2E;
+    --primary: #FF006E;
+    --secondary: #00F5FF;
+    --accent: #312E81;
+    --success: #10B981;
+    --danger: #EF4444;
+    --muted: #94A3B8;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+  html, body {
+    height: 100%;
+    width: 100%;
+    overflow-x: hidden;
+  }
+  body {
+    @apply bg-background text-foreground font-inter;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-orbitron font-bold tracking-wider;
+  }
+  
+  code, pre {
+    @apply font-jetbrains;
+  }
+}
+
+/* Cyberpunk scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-surface;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-secondary;
+  border-radius: 6px;
+  border: 2px solid var(--background);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-primary;
+}
+
+/* Cyberpunk animations */
+@keyframes neon-pulse {
+  0%, 100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 5px currentColor);
+  }
+  50% {
+    opacity: 0.8;
+    filter: drop-shadow(0 0 20px currentColor);
+  }
+}
+
+@keyframes glitch {
+  0% {
+    transform: translate(0);
+    text-shadow: 0.05em 0 0 #FF006E, -0.05em -0.025em 0 #00F5FF;
+  }
+  14% {
+    transform: translate(-0.025em, 0.025em);
+    text-shadow: -0.05em -0.05em 0 #FF006E, 0.025em 0.025em 0 #00F5FF;
+  }
+  15% {
+    transform: translate(0.025em, -0.025em);
+    text-shadow: 0.025em 0.05em 0 #FF006E, 0.05em -0.05em 0 #00F5FF;
+  }
+  49% {
+    transform: translate(-0.025em, 0.025em);
+    text-shadow: -0.05em -0.05em 0 #FF006E, 0.025em 0.025em 0 #00F5FF;
+  }
+  50% {
+    transform: translate(0.025em, -0.025em);
+    text-shadow: 0.025em 0.05em 0 #FF006E, 0.05em -0.05em 0 #00F5FF;
+  }
+  99% {
+    transform: translate(-0.025em, 0.025em);
+    text-shadow: -0.05em -0.05em 0 #FF006E, 0.025em 0.025em 0 #00F5FF;
+  }
+  100% {
+    transform: translate(0);
+    text-shadow: 0.05em 0 0 #FF006E, -0.05em -0.025em 0 #00F5FF;
+  }
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Utility classes */
+.neon-glow {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+.animate-scroll {
+  animation: scroll 30s linear infinite;
+}
+
+.neon-glow-primary {
+  animation: neon-pulse 2s ease-in-out infinite;
+  color: var(--primary);
+}
+
+.neon-glow-secondary {
+  animation: neon-pulse 2s ease-in-out infinite;
+  color: var(--secondary);
+}
+
+.glitch-text {
+  animation: glitch 0.3s linear infinite;
+}
+
+.scanline {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--secondary), transparent);
+  animation: scanline 8s linear infinite;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.3;
+}
+
+.flicker {
+  animation: flicker 1.5s infinite alternate;
+}
+
+/* Neon border effects */
+.neon-border {
+  position: relative;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.neon-border::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, var(--primary), var(--secondary), var(--accent));
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0.7;
+}
+
+.neon-border-primary::before {
+  background: linear-gradient(45deg, var(--primary), transparent, var(--primary));
+}
+
+.neon-border-secondary::before {
+  background: linear-gradient(45deg, var(--secondary), transparent, var(--secondary));
+}
+
+/* Text effects */
+.text-neon-primary {
+  color: var(--primary);
+  text-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary);
+}
+
+.text-neon-secondary {
+  color: var(--secondary);
+  text-shadow: 0 0 10px var(--secondary), 0 0 20px var(--secondary);
+}
+
+.text-neon-success {
+  color: var(--success);
+  text-shadow: 0 0 10px var(--success), 0 0 20px var(--success);
+}
+
+.text-neon-danger {
+  color: var(--danger);
+  text-shadow: 0 0 10px var(--danger), 0 0 20px var(--danger);
+}
+
+/* Background effects */
+.bg-grid-cyber {
+  background-image: 
+    linear-gradient(rgba(0, 245, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 245, 255, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+.bg-gradient-cyber {
+  background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent));
+}
+
+/* Trading specific */
+.profit-indicator {
+  @apply text-neon-success;
+}
+
+.loss-indicator {
+  @apply text-neon-danger;
+}
+
+.trading-card {
+  @apply relative overflow-hidden bg-surface border border-surface;
+}
+
+.trading-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--secondary), transparent);
+}

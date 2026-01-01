@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  emailVerified DateTime?
+  isActive      Boolean   @default(true)
+
+  // Relations
+  positions     Position[]
+  trades        Trade[]
+
+  @@index([email])
+}
+
+// Position (Posições)
+model Position {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol       String
+  type         String   // LONG ou SHORT
+  quantity     Float
+  entryPrice   Float
+  currentPrice Float?
+  pnl          Float?
+  pnlPercent   Float?
+  openedAt     DateTime @default(now())
+  closedAt     DateTime?
+  status       String   @default("OPEN") // OPEN, CLOSED
+
+  // Relations
+  trades       Trade[]
+
+  @@index([userId])
+  @@index([symbol])
+  @@index([status])
+  @@index([openedAt])
+}
+
+// Trade (Operações)
+model Trade {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol      String
+  type        String   // BUY ou SELL
+  quantity    Float
+  price       Float
+  fees        Float    @default(0)
+  total       Float    // quantity * price + fees
+  executedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  // Optional position reference
+  positionId  String?
+  position    Position? @relation(fields: [positionId], references: [id])
+
+  @@index([userId])
+  @@index([symbol])
+  @@index([executedAt])
+  @@index([type])
+}
